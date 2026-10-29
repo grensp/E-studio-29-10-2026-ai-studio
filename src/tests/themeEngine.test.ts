@@ -10,9 +10,12 @@ import {
   DENSITY_PRESETS,
   resolveThemeTokens,
   resolveCustomThemeTokens,
+  resolveSemanticTokens,
+  resolveAllThemeTokens,
   parseCustomThemeJson,
   serializeCustomTheme,
   THEME_PRESETS,
+  THEME_DEFINITIONS,
   type DensityMode,
   type ThemeMode,
 } from '../theme/themeEngine';
@@ -56,6 +59,58 @@ describe('theme engine', () => {
         '--studio-input-height': preset.inputHeight,
         '--studio-font-scale': String(preset.fontScale),
       });
+    });
+  });
+
+  it('resolves the full multi-layered semantic tokens for professional palettes', () => {
+    // 1. Graphite Studio
+    const graphiteSemantic = resolveSemanticTokens('graphite');
+    expect(graphiteSemantic).toMatchObject({
+      '--surface-app': '#111318',
+      '--surface-panel': '#191C23',
+      '--surface-raised': '#232833',
+      '--border-default': '#343B49',
+      '--content-primary': '#F0F3F8',
+      '--action-primary-bg': '#6EA8FE',
+      '--focus-ring': '#9CC2FF',
+      '--canvas-pasteboard': '#282D37',
+      '--canvas-page': '#FFFFFF',
+    });
+
+    // 2. Precision Light
+    const precisionLightSemantic = resolveSemanticTokens('precision-light');
+    expect(precisionLightSemantic).toMatchObject({
+      '--surface-app': '#F5F6F8',
+      '--surface-panel': '#FFFFFF',
+      '--surface-raised': '#EDF0F4',
+      '--border-default': '#D5DAE2',
+      '--content-primary': '#202631',
+      '--action-primary-bg': '#245FD6',
+      '--focus-ring': '#245FD6',
+    });
+
+    // 3. Midnight Teal
+    const midnightTealSemantic = resolveSemanticTokens('midnight-teal');
+    expect(midnightTealSemantic).toMatchObject({
+      '--surface-app': '#101719',
+      '--surface-panel': '#182225',
+      '--action-primary-bg': '#5CC8B0',
+    });
+
+    // 4. Engineering Blue
+    const engineeringBlueSemantic = resolveSemanticTokens('engineering-blue');
+    expect(engineeringBlueSemantic).toMatchObject({
+      '--surface-app': '#151A22',
+      '--surface-panel': '#1D2531',
+      '--action-primary-bg': '#65A8FF',
+    });
+  });
+
+  it('keeps canvas and artwork colors independent of the UI theme', () => {
+    const modes: ThemeMode[] = ['graphite', 'precision-light', 'midnight-teal', 'engineering-blue', 'eink_high_contrast'];
+    modes.forEach((mode) => {
+      const semantic = resolveSemanticTokens(mode);
+      expect(semantic['--canvas-page']).toBe('#FFFFFF');
     });
   });
 
@@ -128,6 +183,6 @@ describe('theme engine', () => {
     applyCustomThemeTokens(element, theme, 'compact');
 
     expect(element.dataset).toMatchObject({ theme: 'graphite', themeId: theme.id, density: 'compact' });
-    expect(element.style.colorScheme).toBe('light');
+    expect(element.style.colorScheme).toBe('dark');
   });
 });

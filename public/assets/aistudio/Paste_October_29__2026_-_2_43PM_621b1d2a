@@ -1,0 +1,848 @@
+rebuild the theme engine following desktop-canvas-ui-design Skill and following down instructions to this repository. also Improve the the whole interface (not just minor changes, but a full rebuild from scratch. check any UI related source code file before making any changes not just reading graft resume) using the specified design tokens, desktop interaction conventions, accessibility requirements, and canvas-editor principles. the changes must affect every single componets in src/components,src/themes, etc
+
+# Advanced Color Systems for Professional Design Software
+
+For a professional desktop-first design application—such as a label editor, vector graphics tool, image editor, presentation designer, or document layout application—the best approach is not to choose a collection of attractive colors. It is to build a semantic, multi-layered color system that controls the entire application consistently.
+
+For a TypeScript application built with React, Vite or Next.js, Zustand and CSS variables, the architecture should separate the application interface, document canvas, selection and editing overlays, semantic status colors, data visualizations, and exported artwork.
+
+The goal is to achieve the consistency, precision and usability expected from mature creative applications such as Adobe, Affinity, Figma and professional IDEs, while allowing users to customize the appearance without compromising the document being designed.
+
+## 1. Recommended professional color palettes
+
+These are proposed production-oriented palettes, not official proprietary palettes from the named companies. They are starting points to validate against your application's actual components, display conditions and accessibility requirements.
+
+[Graphite | Free online vector editor & procedural design tool](https://images.openai.com/static-rsc-4/EOhs39ZtYSOTKIOIC_zxEbJQOqwDTQaC5gjZHjn5EgN-ePcG7xjKV-0eZuKXNaLinu1dRuGnobw90n6umrbk7K5u8DKytJCeW7haNDUt2Uuzt2tZeJAX5ja9b3A-w8VIM4jj_EgfRBWnwXOjOMhNKjFByLtYhvxnPoEqcMo7oHw?purpose=inline)
+
+A. Graphite Studio — primary dark theme
+
+Recommended default
+
+For creative suites, label design, vector editing and long sessions.
+
+\#111318
+
+Base
+
+\#191C23
+
+Panel
+
+\#232833
+
+Raised
+
+\#343B49
+
+Border
+
+\#F0F3F8
+
+Text
+
+Accent: `#6EA8FE` · Hover: `#2B3444` · Selection: `#78A9FF` · Focus: `#9CC2FF`
+
+[Illustrator 2022 for mac (AI 2022中文版)-腾讯云开发者社区-腾讯云](https://images.openai.com/static-rsc-4/70KgQ-kDG6cwuFmftd6WqYlPY48VdFD_7Wjnkp3IXeRdRlkNA6EoROADaZaZrMnJj-dLsvJE_0JeOJwc2XE9iOGI4kP4e2ssso1N8e8RqRfIn5dizpJgwlprMOfeHGr91eRwfuBWTYt_aSaVRKHvn7khIUCG3UJJcQgzLy30cxE?purpose=inline)
+
+B. Precision Light — professional light theme
+
+For office workflows, precision editing, spreadsheets, print preparation and bright environments.
+
+\#F5F6F8
+
+Base
+
+\#FFFFFF
+
+Panel
+
+\#EDF0F4
+
+Raised
+
+\#D5DAE2
+
+Border
+
+\#202631
+
+Text
+
+Accent: `#245FD6` · Hover: `#E6ECF7` · Selection: `#BBD4FF` · Focus: `#245FD6`
+
+[The developer’s guide to design tokens and CSS variables](https://images.openai.com/static-rsc-4/F5oH9MXosm3a0e1ama-PewYnhxdwXXCmv84xDuDY05oB-Gch7sIFWW2ssQbJmFGPdNanuqymk1b7nUcE4_2_I7Er7ncczsrs_np8z54IiApbtKW3VCMOHt3-3B_I4wToYYLR4Z7kwWQdJetq_-MBkxFoZh2mpmx_TbA3vpTKfgc?purpose=inline)
+
+C. Midnight Teal — restrained premium theme
+
+For sophisticated creative tools where the interface should remain calm and artwork should dominate.
+
+\#101719
+
+Base
+
+\#182225
+
+Panel
+
+\#223034
+
+Raised
+
+\#394A4E
+
+Border
+
+\#E8F0EF
+
+Text
+
+Accent: `#5CC8B0` · Hover: `#263B3B` · Selection: `#316F69` · Focus: `#8BE3D0`
+
+[The Best AutoCAD Alternative - BricsCAD](https://images.openai.com/static-rsc-4/6SEvmN0sL4zKEvDNe0ZT1xewoCkc8Dqk4yB4jCrkyAwfw39bS5t-1KBjf1DzWeFy_e78er6uQFM4fBQgKTWsSLlYX7iHRhHPAVQHLcqZceBhvD7j1LwwaJZNeXisc_YIkN-qa_u6TRuYUApRw8rYCOTXXmfgO97TCGbFGtlzw3c?purpose=inline)
+
+D. Engineering Blue — technical workspace
+
+For CAD-like editors, measurement tools, barcode configuration, print diagnostics and dense property panels.
+
+\#151A22
+
+Base
+
+\#1D2531
+
+Panel
+
+\#293444
+
+Raised
+
+\#3D4A5D
+
+Border
+
+\#E8EDF5
+
+Text
+
+Accent: `#65A8FF` · Hover: `#2B3A50` · Selection: `#305D91` · Focus: `#91C1FF`
+
+My recommendation: implement Graphite Studio and Precision Light first. Add Midnight Teal and Engineering Blue as optional presets that use the same semantic token architecture. A new theme should change token values—not require a separate implementation of every component.
+
+## 2. Complete semantic color architecture
+
+The most important architectural decision is to separate color values, semantic meaning, component roles and document colors.
+
+Do not define a single `primary`, `secondary`, `background` and `text` palette and expect it to cover a complex creative application.
+
+Use at least these token families:
+
+| Token family       | Purpose                              | Example                            |
+| ------------------ | ------------------------------------ | ---------------------------------- |
+| Foundation         | Raw color primitives                 | `neutral.950`                      |
+| Surfaces           | Application layers                   | `surface.canvas`, `surface.panel`  |
+| Content            | Text and icons                       | `content.primary`, `content.muted` |
+| Borders            | Separators and outlines              | `border.default`, `border.strong`  |
+| Actions            | Buttons and links                    | `action.primary.bg`                |
+| Interaction        | Hover, active, focus, selection      | `state.focus.ring`                 |
+| Feedback           | Success, warning, error, information | `status.error.fg`                  |
+| Canvas             | Document workspace and page          | `canvas.page`, `canvas.pasteboard` |
+| Selection          | Object boundaries and handles        | `selection.stroke`                 |
+| Data visualization | Charts, heatmaps and metrics         | `viz.series.1`                     |
+| Print              | Bleed, trim, safe area and preflight | `print.bleed.overlay`              |
+| Extensions         | Plugins and custom panels            | Inherited semantic tokens          |
+
+### Recommended surface hierarchy
+
+APPLICATION SHELL · `surface.app`
+
+Toolbar and navigation
+
+Properties panel / dock
+
+Elevated controls, menus and popovers
+
+WORKSPACE / PASTEBOARD
+
+Document page
+
+Selected artwork object
+
+Document colors are independent of the application theme.
+
+Conceptual surface stack. The canvas page is deliberately white here to illustrate separation between application chrome and document artwork.
+
+Rules:
+
+- Use surface roles rather than assigning arbitrary colors to each component.
+- Build depth primarily through subtle luminance differences, borders and spacing—not heavy shadows on every panel.
+- Reserve the strongest accent colors for active tools, primary actions, selection and important feedback.
+- Keep the document page visually distinct from the surrounding workspace.
+- Never automatically recolor imported artwork when the application theme changes.
+- Use consistent surface roles across dockable panels, floating windows, dialogs, context menus and popovers.
+
+## 3. Advanced color specification for every major UI area
+
+The following is a practical baseline for Graphite Studio. Adapt the same semantic roles for light mode rather than applying a simple color inversion.
+
+### A. Application shell and navigation
+
+| Element                     | Suggested color | Usage                                          |
+| --------------------------- | --------------- | ---------------------------------------------- |
+| Main application background | `#111318`       | Overall shell                                  |
+| Main toolbar                | `#191C23`       | Primary commands                               |
+| Sidebar                     | `#191C23`       | Navigation and tool categories                 |
+| Secondary panel             | `#1D212A`       | Supporting controls                            |
+| Active navigation item      | `#2B3444`       | Current section                                |
+| Navigation hover            | `#232833`       | Pointer hover                                  |
+| Divider                     | `#343B49`       | Panel boundaries                               |
+| Primary text                | `#F0F3F8`       | Titles and key labels                          |
+| Secondary text              | `#AAB3C2`       | Supporting information                         |
+| Disabled text               | `#737D8C`       | Disabled controls, subject to contrast testing |
+
+Best practices:
+
+- Keep navigation colors consistent throughout the application.
+- Show the current destination using a restrained background tint, a clear indicator and appropriate text contrast.
+- Distinguish the active tool from keyboard focus; they represent different states.
+- Avoid using a different accent color for every sidebar category.
+- Use separators only when they clarify hierarchy. Too many visible dividers make the interface feel fragmented.
+
+### B. Toolbars, buttons and command surfaces
+
+| State          | Primary button background  | Secondary button background |
+| -------------- | -------------------------- | --------------------------- |
+| Default        | `#6EA8FE`                  | `#232833`                   |
+| Hover          | `#8BB9FF`                  | `#2B3444`                   |
+| Pressed        | `#4D8DEB`                  | `#343B49`                   |
+| Disabled       | `#2B3039`                  | `#1D2128`                   |
+| Keyboard focus | Separate `#9CC2FF` outline | Separate `#9CC2FF` outline  |
+
+Use dark foreground text such as `#111827` on the blue primary button and test the exact contrast. Do not assume white text is always the most readable choice on a bright accent.
+
+A professional command hierarchy should include:
+
+- Primary: the main commit action, such as Generate, Export or Apply.
+- Secondary: common supporting commands.
+- Tertiary: low-emphasis commands, often represented by text or an icon.
+- Destructive: delete, reset or discard operations, with explicit confirmation where appropriate.
+- Toggle: persistent modes such as Snap, Grid or Preview.
+- Split button: a primary action plus a dropdown of related operations.
+
+Do not make every toolbar icon a filled accent button. Use neutral icon buttons by default, and apply accent backgrounds only to selected tools, active toggles or genuinely prominent commands.
+
+### C. Property inspector, forms and precision inputs
+
+| Element              | Dark theme suggestion |
+| -------------------- | --------------------- |
+| Inspector surface    | `#191C23`             |
+| Group header         | `#232833`             |
+| Input background     | `#111318`             |
+| Input border         | `#3A4351`             |
+| Input text           | `#F0F3F8`             |
+| Placeholder          | `#8C96A6`             |
+| Input hover border   | `#66758B`             |
+| Input focus border   | `#6EA8FE`             |
+| Validation error     | `#F87171`             |
+| Read-only background | `#1D2128`             |
+
+Advanced rules for creative software:
+
+- Numeric fields, dimensions, rotation, DPI, offsets and coordinates should use consistent input styling.
+- Unit labels (`mm`, `in`, `px`, `dpi`) should be visually distinct from editable values but remain readable.
+- Show invalid values with an error border and an explanatory message or icon.
+- Use warning colors for potentially problematic values, such as content extending beyond a safe print area.
+- Distinguish modified settings from saved settings without coloring every edited field red or green.
+- Disabled and read-only are different states: a read-only value may still need strong contrast because users must inspect it.
+- Use tabular numerals for values that users compare vertically, including prices, dimensions, measurements and coordinates.
+
+### D. Tabs, panels, docking and floating windows
+
+Recommended behavior:
+
+- Inactive tabs use the normal surface and muted text.
+- The active tab uses primary text and a clear underline, accent edge or restrained surface change.
+- Hover changes should not be mistaken for selection.
+- Dock separators should be visible enough to communicate resize boundaries without dominating the interface.
+- Floating windows may use a slightly elevated surface and restrained shadow.
+- Modal dialogs should have a clear backdrop and readable content; the backdrop must not be so dark that users lose context unnecessarily.
+- Drag targets for docking should use a distinct translucent accent overlay with a clear drop indicator.
+- A panel being active, focused, pinned, collapsed or currently being dragged should have distinct states where those states affect behavior.
+
+Do not rely solely on color to indicate which panel is focused or where a panel will dock.
+
+### E. Canvas, page, pasteboard and artboards
+
+This is the most important distinction in creative software: the application theme is not the document color system.
+
+| Canvas element         | Dark-theme baseline             |
+| ---------------------- | ------------------------------- |
+| Workspace / pasteboard | `#282D37`                       |
+| Document page          | `#FFFFFF` by default            |
+| Page boundary          | `#727C8D`                       |
+| Grid minor             | `#687385` at low opacity        |
+| Grid major             | `#8792A5` at restrained opacity |
+| Rulers                 | `#191C23`                       |
+| Ruler text             | `#B8C3D4`                       |
+| Guides                 | `#36CFC9`                       |
+| Smart alignment guides | `#FF7A59`                       |
+| Page selection outline | `#6EA8FE`                       |
+
+For canvas implementation, prefer drawing the grid, guides, rulers and selection overlays in a dedicated rendering layer rather than embedding them into the document itself.
+
+Additional rules:
+
+- Grid contrast must adapt to zoom and background luminance.
+- Grid lines should become less intrusive when the user is zoomed out.
+- Never let grid lines overpower thin artwork or barcode bars.
+- Support custom pasteboard colors when useful, but keep a safe default.
+- Artboards may have distinct outlines and labels, but those labels should not be exported as artwork unless explicitly requested.
+- Background transparency should use a checkerboard pattern, not a flat gray that can be confused with actual artwork.
+
+For a label editor, the canvas should also support physical units, accurate page dimensions, print margins, bleed, trim and safe-area overlays.
+
+### F. Selection, transform handles and object editing
+
+| Element                  | Recommended color                |
+| ------------------------ | -------------------------------- |
+| Selection outline        | `#78A9FF`                        |
+| Resize handles           | White fill with `#245FD6` border |
+| Rotation handle          | `#6EA8FE`                        |
+| Transform pivot          | `#FFB454`                        |
+| Hovered object outline   | `#B4C7E8`                        |
+| Multi-selection boundary | `#78A9FF`                        |
+| Smart alignment guides   | `#FF7A59`                        |
+| Snap indicator           | `#36CFC9`                        |
+| Locked object indicator  | `#AAB3C2` plus a lock icon       |
+
+The selection overlay must remain visible over both dark and light artwork. For this reason, a single blue line is not always sufficient. Consider a dual-stroke outline or a contrasting outer halo for difficult backgrounds.
+
+Best practices:
+
+1. Keep selection, hover, keyboard focus and snapping visually distinct.
+2. Use consistent handle sizes in screen pixels rather than letting handles become tiny at low zoom.
+3. Ensure transform handles do not obscure small objects.
+4. Use dashed or otherwise differentiated outlines for locked or constrained objects.
+5. Use a separate highlight for the primary object within a multi-selection.
+6. Avoid changing the object's actual fill or stroke simply to indicate selection.
+7. Use non-color indicators for lock state, constraints and snapping wherever possible.
+
+### G. Layers, object tree, outliner and assets
+
+- Selected row: `#2B3444`.
+- Hovered row: `#232833`.
+- Focused row: clear outline or accent indicator.
+- Locked object: muted icon plus lock symbol.
+- Hidden object: eye-slash icon and reduced emphasis.
+- Parent/group: standard text with disclosure arrow.
+- Drag-and-drop insertion target: accent line or highlighted drop zone.
+- Missing asset: error icon and descriptive text.
+- Linked asset requiring refresh: information or warning indicator, depending on severity.
+
+Do not make hidden objects nearly invisible if users still need to find and restore them. Do not use the same color to indicate selected, locked and modified objects.
+
+### H. Timeline, animation and keyframes
+
+If the application includes animation or time-based design:
+
+- Use a neutral track background.
+- Reserve a consistent accent for the active playhead.
+- Give selected keyframes a strong outline or fill distinct from ordinary keyframes.
+- Use a separate color for disabled tracks, but preserve readable track names.
+- Distinguish audio, video, effects and object tracks using restrained categorical colors.
+- Display warnings for missing media, invalid timing or broken dependencies through semantic status tokens.
+- Use patterns or icons in addition to color when several track types must be distinguished.
+
+### I. Status bar, notifications and progress indicators
+
+Use the following semantic colors across the whole application:
+
+Success
+
+Completed export, successful save, valid operation.
+
+Foreground #4ADE80 · Background #153324
+
+Warning
+
+Potential clipping, low-resolution asset, print concern.
+
+Foreground #FBBF24 · Background #392B12
+
+Error
+
+Failed export, invalid configuration, missing required asset.
+
+Foreground #F87171 · Background #3A1C22
+
+Information
+
+Helpful notice, status update, contextual guidance.
+
+Foreground #7DB7FF · Background #172B45
+
+These are example dark-theme pairs, not a claim that every pair passes WCAG contrast requirements. Verify each foreground/background combination before shipping.
+
+For notifications:
+
+- Use a semantic icon, concise title and meaningful description.
+- Keep transient toasts for noncritical events.
+- Use persistent or actionable notifications for failures that require user intervention.
+- Do not communicate a successful export solely through a green flash.
+- Avoid using red for every minor validation issue; reserve stronger error treatment for actual errors.
+
+## 4. Advanced color rules for specialized design features
+
+These features require their own color semantics. Reusing ordinary button or status colors creates confusion.
+
+### A. Heatmap system
+
+For a design application, heatmaps may represent density, selection frequency, visual complexity, print defects, object overlap, content distribution, performance or data quality.
+
+Use separate palettes for different meanings.
+
+1\. Density / frequency heatmap
+
+For object density, crowded regions, click frequency or layout distribution.
+
+Low density
+
+High density
+
+Use a continuous sequential scale. The endpoints should remain distinguishable in grayscale where possible.
+
+2\. Quality / deviation heatmap
+
+For print deviation, misalignment, dimensional errors or quality metrics with a meaningful target.
+
+Severe deviation
+
+Within target
+
+If the metric has a meaningful neutral point, use a diverging palette centered on that value. Do not imply that higher is better unless the metric actually supports that interpretation.
+
+3\. Object overlap heatmap
+
+For detecting overlapping objects, collisions and crowded label layouts.
+
+No / low overlap
+
+Severe overlap
+
+Keep the underlying artwork visible through controlled opacity. Include a legend, metric definition and threshold explanation.
+
+Heatmap implementation requirements
+
+- Use a continuous scale for continuous measurements and discrete colors for categorical states.
+- Define minimum, maximum, normalization method and threshold semantics.
+- Provide a legend and numerical values on hover or selection.
+- Support opacity, visibility toggles and an option to hide the overlay.
+- Do not let the heatmap alter exported artwork.
+- Preserve selection handles and critical editing indicators above the heatmap layer.
+- Support a color-blind-accessible palette and a non-color way to identify critical regions.
+- Use a neutral base rather than a colored canvas whenever the underlying artwork needs to remain visually accurate.
+
+For label design, a useful heatmap could visualize overlapping text, insufficient spacing, density of objects, and the distribution of print defects.
+
+### B. Print production and preflight
+
+Print preparation should have an independent semantic system.
+
+| Feature                | Suggested color | Meaning                            |
+| ---------------------- | --------------- | ---------------------------------- |
+| Bleed boundary         | `#D946EF`       | Bleed limit                        |
+| Trim line              | `#F97316`       | Final cutting boundary             |
+| Safe area              | `#22C55E`       | Recommended content-safe region    |
+| Registration marks     | `#64748B`       | Production alignment marks         |
+| Low-resolution warning | `#FBBF24`       | Resolution below configured target |
+| Out-of-bounds content  | `#F87171`       | Artwork outside permitted bounds   |
+| Missing font or asset  | `#FB923C`       | Dependency requiring attention     |
+
+These are screen-overlay conventions, not mandatory industry color standards. Their colors should be configurable, and they must never silently become part of the exported artwork.
+
+Important rules:
+
+- Bleed, trim and safe-area indicators must use different line styles or labels as well as colors.
+- Distinguish warnings from blocking errors.
+- Report the actual measured DPI and the configured minimum rather than merely displaying a warning color.
+- Include a toggle to hide all production overlays.
+- Preserve the document's physical dimensions and color-management settings independently of the UI theme.
+- Never equate an RGB screen preview with a verified CMYK or physical-print result.
+
+### C. Barcode and QR design
+
+For barcode-oriented design applications:
+
+- Keep the page background and barcode artwork separate from diagnostic overlays.
+- Do not recolor bars, modules or quiet zones when changing the UI theme.
+- Show insufficient quiet zones with a visible outline and a text warning.
+- Distinguish a valid barcode, an unverified barcode and an invalid barcode with icons and explanatory text.
+- Make preview contrast checks use the actual foreground and background colors of the barcode.
+- Never rely on a green validation badge alone as proof of scanner readability.
+
+Barcode colors are part of the document's production requirements, not merely decorative UI colors.
+
+### D. Image editing, typography and color pickers
+
+For image and typography tools:
+
+- Keep the color picker independent of the current theme.
+- Display actual color values in HEX, RGB, HSL and other supported spaces.
+- Distinguish the current color from the previous color using separate swatches.
+- Show transparency using a checkerboard.
+- Keep text selection highlights distinct from object selection outlines.
+- Use an explicit gamut warning or out-of-gamut indicator when relevant.
+- Provide a clear distinction between a color's document value and its screen-rendered appearance.
+
+For professional print workflows, color management should be profile-aware. A theme must never modify a document's embedded ICC profile, output intent or saved color values.
+
+### E. Charts, analytics and data visualization
+
+Use a dedicated chart palette instead of reusing button colors.
+
+Example categorical palette:
+
+| Series   | Color     |
+| -------- | --------- |
+| Series 1 | `#6EA8FE` |
+| Series 2 | `#36CFC9` |
+| Series 3 | `#C4A7FF` |
+| Series 4 | `#FFB454` |
+| Series 5 | `#F08CA8` |
+| Series 6 | `#8ED081` |
+
+Rules:
+
+- Keep series colors stable across views.
+- Use sequential scales for ordered magnitude and diverging scales for positive/negative deviation.
+- Use direct labels, markers, patterns or line styles when series must remain distinguishable without color.
+- Keep chart gridlines subtle.
+- Use semantic red and green only when the chart actually represents failure/success or a clearly defined negative/positive meaning.
+- Never reuse a chart's color index as the semantic status of an object.
+
+## 5. Interaction states: a complete state model
+
+Every reusable component should have explicit visual states.
+
+| State         | Expected behavior                                      |
+| ------------- | ------------------------------------------------------ |
+| Default       | Normal semantic surface and content colors             |
+| Hover         | Small, predictable emphasis                            |
+| Focus-visible | Clear keyboard-focus ring                              |
+| Pressed       | Immediate feedback that the control is being activated |
+| Selected      | Persistent selection indicator                         |
+| Active        | A mode or tool is currently enabled                    |
+| Disabled      | Reduced emphasis and unavailable action                |
+| Read-only     | Cannot be edited, but remains readable                 |
+| Loading       | Progress indication without false success or failure   |
+| Success       | Confirmation of a completed operation                  |
+| Warning       | A potential issue requiring attention                  |
+| Error         | A failed or invalid operation                          |
+| Dragging      | Clear representation of the moving object              |
+| Drop target   | Explicit destination or insertion indicator            |
+
+Do not implement these as arbitrary color adjustments scattered across components. Define them as tokens and shared behavior.
+
+For accessibility, WCAG 2.2 recommends at least 4.5:1 contrast for ordinary text, 3:1 for large text and 3:1 for relevant non-text UI components. It also defines focus-indicator requirements at AAA. Color must not be the only means of conveying a state.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.w3.org\&sz=32)
+
+W3C+2
+
+
+
+## 6. Implementing the system in TypeScript and React
+
+A maintainable implementation should have three layers:
+
+1. Primitive tokens: raw colors and scales.
+2. Semantic tokens: surfaces, content, borders, actions, feedback and canvas roles.
+3. Component tokens: optional component-specific overrides that reference semantic tokens.
+
+Here is a practical starting point.
+
+### Semantic CSS tokens
+
+```
+
+:root,
+[data-theme="graphite"] {
+  color-scheme: dark;
+
+  /* Application surfaces */
+  --surface-app: #111318;
+  --surface-panel: #191c23;
+  --surface-raised: #232833;
+  --surface-hover: #2b3444;
+  --surface-input: #111318;
+
+  /* Content */
+  --content-primary: #f0f3f8;
+  --content-secondary: #aab3c2;
+  --content-muted: #8c96a6;
+  --content-disabled: #737d8c;
+
+  /* Borders */
+  --border-subtle: #2b3039;
+  --border-default: #343b49;
+  --border-strong: #596578;
+
+  /* Actions and focus */
+  --action-primary-bg: #6ea8fe;
+  --action-primary-hover: #8bb9ff;
+  --action-primary-pressed: #4d8deb;
+  --action-primary-fg: #111827;
+  --focus-ring: #9cc2ff;
+
+  /* Feedback */
+  --status-success: #4ade80;
+  --status-warning: #fbbf24;
+  --status-error: #f87171;
+  --status-info: #7db7ff;
+
+  /* Canvas: independent of document colors */
+  --canvas-pasteboard: #282d37;
+  --canvas-page: #ffffff;
+  --canvas-page-border: #727c8d;
+  --canvas-grid-minor: #687385;
+  --canvas-grid-major: #8792a5;
+
+  /* Editor overlays */
+  --selection-stroke: #78a9ff;
+  --selection-handle-fill: #ffffff;
+  --selection-handle-stroke: #245fd6;
+  --guide-alignment: #ff7a59;
+  --guide-snap: #36cfc9;
+
+  /* Print overlays */
+  --print-bleed: #d946ef;
+  --print-trim: #f97316;
+  --print-safe-area: #22c55e;
+}
+
+[data-theme="precision-light"] {
+  color-scheme: light;
+
+  --surface-app: #f5f6f8;
+  --surface-panel: #ffffff;
+  --surface-raised: #edf0f4;
+  --surface-hover: #e6ecf7;
+  --surface-input: #ffffff;
+
+  --content-primary: #202631;
+  --content-secondary: #505a69;
+  --content-muted: #626d7d;
+  --content-disabled: #767f8c;
+
+  --border-subtle: #e4e7ed;
+  --border-default: #d5dae2;
+  --border-strong: #aeb7c5;
+
+  --action-primary-bg: #245fd6;
+  --action-primary-hover: #1e4fb8;
+  --action-primary-pressed: #183f96;
+  --action-primary-fg: #ffffff;
+  --focus-ring: #245fd6;
+
+  --status-success: #16733a;
+  --status-warning: #8a5300;
+  --status-error: #b4232f;
+  --status-info: #245fd6;
+
+  --canvas-pasteboard: #e6e9ef;
+  --canvas-page: #ffffff;
+  --canvas-page-border: #8b95a4;
+  --canvas-grid-minor: #cbd2dd;
+  --canvas-grid-major: #aeb8c8;
+
+  --selection-stroke: #245fd6;
+  --selection-handle-fill: #ffffff;
+  --selection-handle-stroke: #1748a5;
+  --guide-alignment: #c24124;
+  --guide-snap: #087f8c;
+
+  --print-bleed: #a21caf;
+  --print-trim: #c2410c;
+  --print-safe-area: #16733a;
+}
+
+body {
+  background: var(--surface-app);
+  color: var(--content-primary);
+}
+
+.panel {
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+}
+
+.canvas-pasteboard {
+  background: var(--canvas-pasteboard);
+}
+
+.document-page {
+  background: var(--canvas-page);
+  color: #111111;
+  border: 1px solid var(--canvas-page-border);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+```
+
+This is a starting token contract, not a fully contrast-validated production theme. For example, muted text and some status colors must be tested against every surface on which they appear. Use a contrast checker and automated theme tests before release.
+
+The CSS `color-scheme` property helps browser-native controls, scrollbars and other UI chrome follow the selected scheme; it does not automatically theme your custom React components.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://developer.mozilla.org\&sz=32)
+
+MDN+1
+
+
+
+### TypeScript token structure
+
+For a TypeScript codebase, keep token names typed and avoid scattering raw HEX values throughout components.
+
+```
+
+export type ThemeId =
+  | "graphite"
+  | "precision-light"
+  | "midnight-teal"
+  | "engineering-blue";
+
+export interface SemanticColorTokens {
+  surface: {
+    app: string;
+    panel: string;
+    raised: string;
+    hover: string;
+    input: string;
+  };
+  content: {
+    primary: string;
+    secondary: string;
+    muted: string;
+    disabled: string;
+  };
+  border: {
+    subtle: string;
+    default: string;
+    strong: string;
+  };
+  action: {
+    primary: string;
+    primaryHover: string;
+    primaryPressed: string;
+    primaryForeground: string;
+  };
+  state: {
+    focus: string;
+    selection: string;
+    success: string;
+    warning: string;
+    error: string;
+    info: string;
+  };
+  canvas: {
+    pasteboard: string;
+    page: string;
+    gridMinor: string;
+    gridMajor: string;
+  };
+}
+
+export interface ThemeDefinition {
+  id: ThemeId;
+  label: string;
+  colorScheme: "light" | "dark";
+  colors: SemanticColorTokens;
+}
+
+```
+
+In production, extend this schema for typography, spacing, density, shadows, motion, chart palettes and editor overlays. Validate that each theme supplies all required tokens.
+
+## 7. Zustand, persistence and dynamic theming
+
+Zustand should manage the user's selected theme, customization preferences and other application-level theme settings—not replace CSS as the styling engine.
+
+A suitable state model might include:
+
+```
+
+type ThemeMode = "system" | "light" | "dark";
+
+interface ThemePreferences {
+  mode: ThemeMode;
+  themeId: ThemeId;
+  highContrast: boolean;
+  useCustomAccent: boolean;
+  customAccent?: string;
+}
+
+interface ThemeState {
+  preferences: ThemePreferences;
+  setMode: (mode: ThemeMode) => void;
+  setTheme: (themeId: ThemeId) => void;
+  setHighContrast: (enabled: boolean) => void;
+  setCustomAccent: (color: string) => void;
+}
+
+```
+
+Implementation requirements:
+
+- Persist user preferences across application restarts.
+- Resolve system mode through `prefers-color-scheme` when `mode === "system"`.
+- Apply theme variables at a predictable root, such as the application shell.
+- Avoid changing the document's own colors when the theme changes.
+- Validate custom accent colors against the required foreground and interaction contrasts.
+- Restore a valid default theme if saved preferences reference a theme that no longer exists.
+- Ensure newly opened windows and plugin panels inherit the correct theme.
+- Avoid persisting transient states such as hover, focus, drag or pressed states.
+- Prevent a visible flash of the wrong theme during startup when the runtime allows early preference restoration.
+
+For React, a theme provider can apply the selected `data-theme` attribute, while Zustand stores the preference. In a Next.js application, make sure initial server rendering and client-side theme resolution do not produce hydration mismatches.
+
+## 8. Advanced customization without breaking consistency
+
+Professional users may want a different accent, denser panels, high contrast or a custom canvas appearance. Offer customization in controlled layers.
+
+| Customization layer | What users may change                                                    |
+| ------------------- | ------------------------------------------------------------------------ |
+| Preset theme        | Full semantic color palette                                              |
+| Accent              | Primary action, focus and selection accents, with role-specific variants |
+| Interface density   | Spacing, row height, control height                                      |
+| Accessibility       | Contrast mode, text scaling, reduced motion                              |
+| Canvas appearance   | Pasteboard, grid and guide colors                                        |
+| Editor overlays     | Selection and diagnostic colors                                          |
+| Visualization       | Heatmap and chart palettes                                               |
+| Document appearance | Page background and artwork colors, stored separately                    |
+
+Recommended priority order:
+
+1. Mandatory application and accessibility constraints.
+2. Explicit user accessibility preferences.
+3. User-selected theme preset.
+4. Validated custom semantic overrides.
+5. Component-specific defaults.
+6. Browser or operating-system defaults where appropriate.
+
+This priority order should be implemented deliberately rather than relying on accidental CSS specificity. Some accessibility requirements may need to override custom colors when a custom configuration makes the interface unusable.
+
+Respect `prefers-reduced-motion` for nonessential animations and transitions.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://developer.mozilla.org\&sz=32)
+
+## 09. Authoritative references
+
+Use these references to validate the implementation rather than treating any palette as universally correct.
+
+- W3C WCAG 2.2 — [Accessibility requirements and success criteria](https://www.w3.org/TR/WCAG22/?utm_source=chatgpt.com).
+- W3C WAI — [Contrast minimum guidance](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html?utm_source=chatgpt.com).
+- MDN Web Docs — [CSS color-scheme](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/color-scheme?utm_source=chatgpt.com).
+- MDN Web Docs — [Reduced-motion support](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/%40media/prefers-reduced-motion?utm_source=chatgpt.com).

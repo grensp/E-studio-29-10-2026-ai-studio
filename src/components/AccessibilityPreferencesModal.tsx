@@ -469,12 +469,19 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
                 {/* Preset Themes Grid */}
                 <div className="space-y-2">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                    Palettes Officielles
+                    Palettes Officielles (Système 4-Palettes Professionnel)
                   </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {(Object.entries(THEME_PRESETS) as Array<[ThemeMode, (typeof THEME_PRESETS)[ThemeMode]]>).map(([mode, preset]) => {
-                      const isActive = themeMode === mode && !activeCustomThemeId;
-                      const Icon = mode === 'light' ? Sun : mode === 'dark' ? Moon : mode === 'graphite' ? Layers : ShieldAlert;
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {(['graphite', 'precision-light', 'midnight-teal', 'engineering-blue', 'dark', 'eink_high_contrast'] as ThemeMode[]).map((mode) => {
+                      const preset = THEME_PRESETS[mode];
+                      const isActive = (themeMode === mode || (mode === 'precision-light' && themeMode === 'light')) && !activeCustomThemeId;
+                      const Icon =
+                        mode === 'graphite' ? Layers :
+                        mode === 'precision-light' || mode === 'light' ? Sun :
+                        mode === 'midnight-teal' ? Sparkles :
+                        mode === 'engineering-blue' ? Compass :
+                        mode === 'dark' ? Moon :
+                        ShieldAlert;
 
                       return (
                         <button

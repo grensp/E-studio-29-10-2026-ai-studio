@@ -215,7 +215,7 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
     const allLocked = selectedItems.every((it) => it.locked);
 
     return (
-      <div style={{ width: inspectorWidth }} className="bg-white border-l border-slate-200 h-full flex flex-col text-xs text-slate-700 select-none overflow-y-auto shrink-0 z-10 shadow-lg">
+      <div style={{ width: inspectorWidth }} className="designer-inspector-panel bg-white border-l border-slate-200 h-full flex flex-col text-xs text-slate-700 select-none overflow-y-auto shrink-0 z-10 shadow-lg">
         {/* Multi-Selection Header */}
         <div className="p-3 border-b border-slate-200 bg-blue-50/70 flex items-center justify-between">
           <div className="flex items-center gap-2">

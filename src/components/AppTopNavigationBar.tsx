@@ -71,9 +71,13 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
   const [fileMenuOpen, setFileMenuOpen] = React.useState(false);
   const projectFileInput = React.useRef<HTMLInputElement>(null);
 
-  // Global hotkeys Alt+1 .. Alt+4
+  // Global hotkeys Alt+1 .. Alt+4 & Escape for open menus
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setFileMenuOpen(false);
+        setToolsDropdownOpen(false);
+      }
       if (e.altKey && !e.ctrlKey && !e.metaKey) {
         if (e.key === '1') {
           e.preventDefault();
@@ -269,6 +273,9 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
           <div className="relative">
             <button
               onClick={() => setToolsDropdownOpen((prev) => !prev)}
+              aria-haspopup="true"
+              aria-expanded={toolsDropdownOpen}
+              aria-label={t('systemTools')}
               className="p-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg border border-slate-800 transition focus:outline-none"
               title={t('systemTools')}
             >

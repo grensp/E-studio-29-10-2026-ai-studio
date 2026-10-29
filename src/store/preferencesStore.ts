@@ -156,7 +156,9 @@ async function persistPreference(key: string, value: string): Promise<void> {
     } else {
       if (key === 'estudio_theme_mode') {
         try {
-          window.localStorage.setItem(key, value);
+          if (typeof window !== 'undefined' && window.localStorage) {
+            window.localStorage.setItem(key, value);
+          }
         } catch (error) {
           console.error('Unable to persist the browser theme preference', error);
         }

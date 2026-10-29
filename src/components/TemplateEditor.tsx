@@ -2776,36 +2776,36 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-            <span className="font-sans font-medium text-slate-700">
+            <span className="font-sans font-medium text-slate-200">
               {template.name} ({template.width_mm} × {template.height_mm} mm)
             </span>
           </div>
 
-          <div className="h-3.5 w-px bg-slate-200" />
+          <div className="h-3.5 w-px bg-slate-700" />
 
           {selectedItems.length === 1 ? (
-            <div className="flex items-center gap-3 text-slate-700">
-              <span className="font-sans font-semibold text-blue-600">
+            <div className="flex items-center gap-3 text-slate-200">
+              <span className="font-sans font-semibold text-blue-400">
                 {selectedItems[0].type.toUpperCase()} #{selectedItems[0].id.slice(0, 6)}
               </span>
               <span>
-                X: <strong className="font-bold">{selectedItems[0].x_mm}</strong> mm ({Math.round(selectedItems[0].x_mm * 3.78)} px)
+                X: <strong className="font-bold text-white">{selectedItems[0].x_mm}</strong> mm ({Math.round(selectedItems[0].x_mm * 3.78)} px)
               </span>
               <span>
-                Y: <strong className="font-bold">{selectedItems[0].y_mm}</strong> mm ({Math.round(selectedItems[0].y_mm * 3.78)} px)
+                Y: <strong className="font-bold text-white">{selectedItems[0].y_mm}</strong> mm ({Math.round(selectedItems[0].y_mm * 3.78)} px)
               </span>
               <span>
-                L: <strong className="font-bold">{selectedItems[0].w_mm}</strong> mm
+                L: <strong className="font-bold text-white">{selectedItems[0].w_mm}</strong> mm
               </span>
               <span>
-                H: <strong className="font-bold">{selectedItems[0].h_mm}</strong> mm
+                H: <strong className="font-bold text-white">{selectedItems[0].h_mm}</strong> mm
               </span>
               {selectedItems[0].rotation ? (
-                <span>Rot: <strong className="font-bold">{selectedItems[0].rotation}°</strong></span>
+                <span>Rot: <strong className="font-bold text-white">{selectedItems[0].rotation}°</strong></span>
               ) : null}
             </div>
           ) : selectedItems.length > 1 ? (
-            <div className="flex items-center gap-2 text-indigo-700 font-semibold font-sans">
+            <div className="flex items-center gap-2 text-indigo-300 font-semibold font-sans">
               <span>{selectedItems.length} éléments sélectionnés</span>
             </div>
           ) : (
@@ -2815,18 +2815,18 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
 
         <div className="flex items-center gap-4">
           {mousePosMm && (
-            <div className="flex items-center gap-2 text-slate-600">
+            <div className="flex items-center gap-2 text-slate-300">
               <Crosshair className="w-3 h-3 text-slate-400" />
               <span>
-                Curseur: <strong>{mousePosMm.x_mm}</strong>, <strong>{mousePosMm.y_mm}</strong> mm
+                Curseur: <strong className="text-white">{mousePosMm.x_mm}</strong>, <strong className="text-white">{mousePosMm.y_mm}</strong> mm
               </span>
             </div>
           )}
 
-          <div className="h-3.5 w-px bg-slate-200" />
+          <div className="h-3.5 w-px bg-slate-700" />
 
           <div className="text-[10px] text-slate-400 font-sans hidden md:flex items-center gap-1.5">
-            <span className="font-medium text-slate-600">Nudge:</span>
+            <span className="font-medium text-slate-300">Nudge:</span>
             <span>Flèches = 1px</span>
             <span>•</span>
             <span>Maj+Flèches = 10px</span>
@@ -2834,9 +2834,9 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
             <span>Alt = 0.1mm</span>
           </div>
 
-          <div className="h-3.5 w-px bg-slate-200" />
+          <div className="h-3.5 w-px bg-slate-700" />
 
-          <span className="text-slate-500 font-semibold">{Math.round(zoom * 100)}%</span>
+          <span className="text-slate-300 font-semibold">{Math.round(zoom * 100)}%</span>
         </div>
       </footer>
 

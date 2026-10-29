@@ -215,8 +215,12 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
         </div>
 
         {/* Navigation Tabs */}
-        <div className="grid grid-cols-3 gap-1 bg-slate-950 p-0.5 rounded-lg text-xs font-semibold">
+        <div role="tablist" aria-label="Sections du panneau latéral" className="grid grid-cols-3 gap-1 bg-slate-950 p-0.5 rounded-lg text-xs font-semibold">
           <button
+            role="tab"
+            aria-selected={activeTab === 'layers'}
+            id="tab-layers"
+            aria-controls="panel-layers"
             onClick={() => setActiveTab('layers')}
             className={`py-1.5 rounded-md flex items-center justify-center gap-1.5 transition ${
               activeTab === 'layers'
@@ -229,6 +233,10 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
           </button>
 
           <button
+            role="tab"
+            aria-selected={activeTab === 'data'}
+            id="tab-data"
+            aria-controls="panel-data"
             onClick={() => setActiveTab('data')}
             className={`py-1.5 rounded-md flex items-center justify-center gap-1.5 transition ${
               activeTab === 'data'
@@ -241,6 +249,10 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
           </button>
 
           <button
+            role="tab"
+            aria-selected={activeTab === 'rules'}
+            id="tab-rules"
+            aria-controls="panel-rules"
             onClick={() => setActiveTab('rules')}
             className={`py-1.5 rounded-md flex items-center justify-center gap-1.5 transition ${
               activeTab === 'rules'
@@ -261,6 +273,7 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={activeTab === 'layers' ? 'Filtrer les calques...' : 'Chercher un champ...'}
+            aria-label={activeTab === 'layers' ? 'Filtrer les calques' : 'Chercher un champ dans le catalogue'}
             className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-8 pr-3 py-1 text-xs text-slate-200 placeholder-slate-500 focus:outline-hidden focus:border-indigo-500 transition"
           />
         </div>
@@ -268,7 +281,12 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
 
       {/* Tab 1: Calques & Arborescence */}
       {activeTab === 'layers' && (
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        <div
+          id="panel-layers"
+          role="tree"
+          aria-label="Arborescence des calques du gabarit"
+          className="flex-1 overflow-y-auto p-2 space-y-1"
+        >
           {filteredItems.length === 0 ? (
             <div className="text-center py-8 text-slate-500 text-xs italic">
               Aucun élément trouvé
@@ -282,8 +300,17 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
               return (
                 <div
                   key={item.id}
+                  role="treeitem"
+                  aria-selected={isSelected}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onSelectItem(item.id, e.shiftKey || e.metaKey || e.ctrlKey);
+                    }
+                  }}
                   onClick={(e) => onSelectItem(item.id, e.shiftKey || e.metaKey || e.ctrlKey)}
-                  className={`group px-2 py-1.5 rounded-lg text-xs flex items-center justify-between gap-1.5 cursor-pointer transition border ${
+                  className={`group px-2 py-1.5 rounded-lg text-xs flex items-center justify-between gap-1.5 cursor-pointer transition border focus:outline-none focus:ring-1 focus:ring-indigo-400 ${
                     isSelected
                       ? 'bg-indigo-600/30 border-indigo-500 text-white shadow-xs'
                       : 'bg-slate-800/40 border-transparent hover:bg-slate-800 hover:border-slate-700 text-slate-300'
@@ -315,6 +342,7 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
                         isLocked ? 'text-amber-400' : 'text-slate-400 hover:text-white'
                       }`}
                       title={isLocked ? 'Déverrouiller' : 'Verrouiller'}
+                      aria-label={isLocked ? `Déverrouiller le calque ${getItemTitle(item)}` : `Verrouiller le calque ${getItemTitle(item)}`}
                     >
                       {isLocked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
                     </button>
@@ -327,6 +355,7 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
                       }}
                       className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-700 transition"
                       title="Monter le calque"
+                      aria-label="Monter le calque"
                     >
                       <MoveUp className="w-3 h-3" />
                     </button>
@@ -339,6 +368,7 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
                       }}
                       className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-700 transition"
                       title="Descendre le calque"
+                      aria-label="Descendre le calque"
                     >
                       <MoveDown className="w-3 h-3" />
                     </button>
@@ -351,6 +381,7 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
                       }}
                       className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-700 transition"
                       title="Dupliquer"
+                      aria-label="Dupliquer le calque"
                     >
                       <Copy className="w-3 h-3" />
                     </button>
@@ -363,6 +394,7 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
                       }}
                       className="p-1 rounded text-slate-400 hover:text-red-400 hover:bg-slate-700 transition"
                       title="Supprimer"
+                      aria-label="Supprimer le calque"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>

@@ -23,6 +23,37 @@
   --studio-accent: #b64b31;
   --studio-accent-soft: rgba(182, 75, 49, 0.12);
   --studio-app-bg: #e7ebe4;
+
+  /* Semantic Design Tokens (Desktop Canvas UI Specification) */
+  --app-bg: var(--studio-app-bg);
+  --surface-1: var(--studio-paper);
+  --surface-2: var(--studio-surface);
+  --surface-3: var(--studio-surface-strong);
+  --surface-inset: var(--studio-workbench);
+  --text-primary: var(--studio-ink);
+  --text-secondary: var(--studio-muted);
+  --text-muted: var(--studio-muted);
+  --border: var(--studio-line);
+  --border-strong: color-mix(in srgb, var(--studio-line) 85%, #000);
+  --accent: var(--studio-accent);
+  --accent-soft: var(--studio-accent-soft);
+  --selection: var(--studio-accent);
+  --focus-ring: var(--studio-accent);
+  --scrim: rgb(15 23 42 / 50%);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring, #b64b31);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 html,
@@ -81,26 +112,32 @@ body {
 
 [data-studio-workspace='designer'] > .designer-ribbon {
   display: flex;
-  align-content: center;
-  flex-wrap: wrap;
-  gap: 3px 8px;
-  min-height: 64px;
-  max-height: 88px;
-  background: linear-gradient(180deg, var(--studio-paper-alt) 0%, var(--studio-paper) 100%);
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  min-height: 44px;
+  max-height: 48px;
+  background: var(--studio-paper-alt);
   border-bottom: 1px solid var(--studio-line);
-  box-shadow: inset 0 -1px 0 rgb(255 255 255 / 18%);
+  box-shadow: inset 0 -1px 0 rgb(255 255 255 / 15%);
+  padding-left: 8px;
+  padding-right: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 [data-studio-workspace='designer'] .designer-insert-tools {
-  flex: 1 0 100%;
+  display: flex;
+  align-items: center;
   min-width: 0;
-  flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 [data-studio-workspace='designer'] .designer-ribbon button {
-  min-height: 26px;
+  min-height: 28px;
   border-radius: 6px;
+  transition: all 120ms ease;
 }
 
 [data-studio-workspace='designer'] .designer-ribbon .bg-white {

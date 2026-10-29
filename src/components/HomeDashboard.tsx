@@ -1,0 +1,525 @@
+import React, { useState } from 'react';
+import { LabelTemplate } from '../types';
+import { LabelRenderer } from './LabelRenderer';
+import { ContextTooltip, useTooltip } from '../context/TooltipContext';
+import {
+  Plus,
+  Printer,
+  Edit3,
+  Copy,
+  Trash2,
+  Download,
+  Upload,
+  Search,
+  Tag,
+  BookOpen,
+  FileSpreadsheet,
+  Cpu,
+  Database,
+  History,
+  FileCode2,
+} from 'lucide-react';
+import { desktopFileService } from '../services/desktopFileService';
+import { PrintJobHistoryModal } from './PrintJobHistoryModal';
+import { PreFlightEngine } from '../utils/preFlightEngine';
+import { api } from '../services/api';
+import { catalogRepository } from '../services/catalogRepository';
+import { ZplSourceWorkbench } from './ZplSourceWorkbench';
+import { importZplTemplate } from '../utils/zplTemplateImport';
+import { useLocalization } from '../context/LocalizationContext';
+import { translateDashboardAction } from '../i18n/localization';
+
+interface HomeDashboardProps {
+  templates: LabelTemplate[];
+  onSelectTemplateToEdit: (template: LabelTemplate) => void;
+  onSelectTemplateToGenerate: (template: LabelTemplate) => void;
+  onOpenNewWizard: () => void;
+  onDuplicateTemplate: (template: LabelTemplate) => void;
+  onDeleteTemplate: (templateId: string) => void;
+  onImportTemplate: (template: LabelTemplate) => Promise<LabelTemplate>;
+  onOpenRulesModal: () => void;
+  onOpenAuditLogs?: () => void;
+  onOpenFontManager?: () => void;
+  onOpenMappingDictionary?: () => void;
+  onOpenCatalog?: () => void;
+  onRefreshTemplates?: () => void;
+}
+
+export const HomeDashboard: React.FC<HomeDashboardProps> = ({
+  templates,
+  onSelectTemplateToEdit,
+  onSelectTemplateToGenerate,
+  onOpenNewWizard,
+  onDuplicateTemplate,
+  onDeleteTemplate,
+  onImportTemplate,
+  onOpenRulesModal,
+  onOpenAuditLogs,
+  onOpenFontManager,
+  onOpenMappingDictionary,
+  onOpenCatalog,
+  onRefreshTemplates,
+}) => {
+  const { t, locale } = useLocalization();
+  const dashboardText = (key: Parameters<typeof translateDashboardAction>[1]) =>
+    translateDashboardAction(locale, key);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [devTestResult, setDevTestResult] = useState<string | null>(null);
+  const [dbOpMessage, setDbOpMessage] = useState<string | null>(null);
+
+  const handleBackupDatabase = async () => {
+    try {
+      const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+      if (isTauri) {
+        const defaultFilename = `estudio_backup_${new Date().toISOString().slice(0, 10)}.sqlite`;
+        const path = await desktopFileService.saveBinary(
+          defaultFilename,
+          new Uint8Array(0),
+          [{ name: 'Base SQLite E-Studio', extensions: ['sqlite', 'db'] }]
+        );
+        if (path) {
+          await api.backupDb(path);
+          setDbOpMessage(`Base SQLite sauvegardée vers ${path} (base locale non chiffrée).`);
+          return;
+        }
+      }
+      const dump = await api.exportDatabase();
+      const filename = `estudio_backup_${new Date().toISOString().slice(0, 10)}.json`;
+      await desktopFileService.saveText(filename, dump, [
+        { name: 'Sauvegarde E-Studio (JSON)', extensions: ['json'] },
+      ]);
+      setDbOpMessage('Base sauvegardée avec succès (base locale non chiffrée).');
+    } catch (err: any) {
+      setDbOpMessage(`Erreur de sauvegarde: ${err?.message || String(err)}`);
+    }
+  };
+
+  const handleRestoreDatabase = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const text = event.target?.result as string;
+          const res = await api.importDatabase(text);
+          await catalogRepository.init();
+          setDbOpMessage(`Base restaurée (base locale non chiffrée) : ${res.templates} gabarit(s), ${res.products} produit(s).`);
+          onRefreshTemplates?.();
+        } catch (err: any) {
+          setDbOpMessage(`Erreur de restauration: ${err?.message || String(err)}`);
+        }
+      };
+      reader.readAsText(file);
+    } catch (err: any) {
+      setDbOpMessage(`Erreur de restauration: ${err?.message || String(err)}`);
+    }
+    e.target.value = '';
+  };
+
+  const handleRestoreNativeDatabase = async () => {
+    const sourcePath = await desktopFileService.openPath([
+      { name: 'Base SQLite E-Studio', extensions: ['sqlite', 'db'] },
+    ]);
+    if (!sourcePath) return;
+    try {
+      await api.restoreDb(sourcePath);
+      await catalogRepository.init();
+      setDbOpMessage(`Base SQLite restaurée depuis ${sourcePath}.`);
+      onRefreshTemplates?.();
+    } catch (err: any) {
+      setDbOpMessage(`Erreur de restauration: ${err?.message || String(err)}`);
+    }
+  };
+
+  const handleDevTestSQLite = async () => {
+    try {
+      const testId = `dev_test_${Date.now()}`;
+      const sampleDoc: LabelTemplate = {
+        id: testId,
+        schema_version: 1,
+        revision: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        name: 'Gabarit Test SQLite',
+        width_mm: 80,
+        height_mm: 40,
+        inner_margins_mm: { top: 2, bottom: 2, left: 2, right: 2 },
+        outer_margins_mm: { top: 1, bottom: 1, left: 1, right: 1 },
+        bg_color: '#FFFFFF',
+        bg_opacity: 1,
+        items: [],
+      };
+
+      const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+      if (isTauri) {
+        const { invoke } = await import('@tauri-apps/api/core');
+        const saved = await invoke<LabelTemplate>('template_save', { doc: sampleDoc });
+        const retrieved = await invoke<LabelTemplate>('template_get', { id: saved.id });
+        setDevTestResult(`✅ SQLite vérifié (Tauri IPC): ${retrieved.name} [id=${retrieved.id}, rev=${retrieved.revision}]`);
+      } else {
+        setDevTestResult(`ℹ️ SQLite Tauri prêt: commandes 'template_save' & 'template_get' configurées`);
+      }
+    } catch (err: any) {
+      setDevTestResult(`❌ Erreur SQLite: ${err?.message || String(err)}`);
+    }
+  };
+
+  const filteredTemplates = templates.filter((t) =>
+    t.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const [importError, setImportError] = useState<string | null>(null);
+  const [showJobHistory, setShowJobHistory] = useState(false);
+  const [showZplWorkbench, setShowZplWorkbench] = useState(false);
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const isZpl = /\.(zpl|txt)$/i.test(file.name);
+      const contents = isZpl
+        ? new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(await file.arrayBuffer())
+        : await file.text();
+      if (isZpl) {
+        const { template, diagnostics } = importZplTemplate(contents, file.name);
+        const importedTemplate = await onImportTemplate(template);
+        onSelectTemplateToEdit(importedTemplate);
+        setImportError(diagnostics.length
+          ? `Import ZPL effectué avec ${diagnostics.length} avertissement(s) : ${diagnostics.slice(0, 3).join(' ')}`
+          : `Source ZPL importée dans le canvas : ${template.items.length} objet(s) reconnu(s).`);
+      } else {
+        const json = JSON.parse(contents);
+        if (json && json.name && json.width_mm && json.height_mm) {
+          setImportError(null);
+          const importedTemplate = await onImportTemplate(json);
+          onSelectTemplateToEdit(importedTemplate);
+        } else {
+          setImportError('Fichier JSON de gabarit invalide (propriétés manquantes).');
+        }
+      }
+    } catch (error) {
+      setImportError(`Import impossible : ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
+  const handleExportTemplate = async (template: LabelTemplate) => {
+    const dataStr = JSON.stringify(template, null, 2);
+    const filename = `gabarit_${template.name.replace(/\s+/g, '_')}.json`;
+    await desktopFileService.saveText(filename, dataStr, [
+      { name: 'Gabarit E-Studio', extensions: ['json'] },
+    ]);
+  };
+
+  return (
+    <div data-studio-workspace="library" className="flex-1 flex flex-col bg-slate-950 text-slate-100 overflow-y-auto font-sans">
+      {/* Top Welcome Banner */}
+      <div className="bg-slate-900 border-b border-slate-800 py-6 px-8">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-blue-400 mb-1 font-semibold text-xs uppercase tracking-wider">
+              <Tag className="w-4 h-4" />
+              <span>{t('productLine')}</span>
+            </div>
+            <h1 className="text-xl font-bold text-white tracking-tight">
+              E-Studio Desktop
+            </h1>
+            <p className="text-xs text-slate-400 mt-1 max-w-xl">
+              {locale === 'fr'
+                ? 'Conception vectorielle en millimètres réels, résolution locale de catalogue Excel/CSV, validation pré-presse déterministe et imposition sur planches.'
+                : 'Design labels in real millimeters, work with local Excel/CSV catalogs, run deterministic preflight checks, and impose print sheets.'}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              onClick={() => setShowZplWorkbench(true)}
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition"
+              title={dashboardText('zplWorkbench')}
+            >
+              <FileCode2 className="w-3.5 h-3.5 text-amber-300" />
+              <span>{dashboardText('zplWorkbench')}</span>
+            </button>
+            <button
+              onClick={onOpenCatalog}
+              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-sm transition"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>{dashboardText('catalogImport')}</span>
+            </button>
+
+            <button
+              onClick={() => setShowJobHistory(true)}
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition"
+              title={dashboardText('printHistory')}
+            >
+              <History className="w-3.5 h-3.5 text-purple-400" />
+              <span>{dashboardText('printHistory')}</span>
+            </button>
+
+            <button
+              onClick={onOpenMappingDictionary}
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-blue-400" />
+              <span>Mapping</span>
+            </button>
+
+            <button
+              onClick={onOpenRulesModal}
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition"
+            >
+              <Cpu className="w-3.5 h-3.5 text-purple-400" />
+              <span>Règles d'Affichage</span>
+            </button>
+
+            <button
+              onClick={onOpenNewWizard}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition"
+            >
+              <Plus className="w-4 h-4" />
+              <span>{t('createTemplate')}</span>
+            </button>
+
+            <label className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer transition">
+              <Upload className="w-3.5 h-3.5" />
+              <span>{t('importTemplates')}</span>
+              <input type="file" accept=".json,.zpl,.txt,application/json,text/plain" onChange={handleImportFile} className="hidden" />
+            </label>
+
+            <button
+              onClick={handleBackupDatabase}
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition"
+              title={dashboardText('unencryptedDatabase')}
+            >
+              <Download className="w-3.5 h-3.5 text-blue-400" />
+              <span>{dashboardText('databaseBackup')}</span>
+            </button>
+
+            <label
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer transition"
+              title={dashboardText('unencryptedDatabase')}
+            >
+              <Upload className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{dashboardText('databaseRestore')}</span>
+              <input type="file" accept=".json" onChange={handleRestoreDatabase} className="hidden" />
+            </label>
+
+            {typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window && (
+              <button
+                onClick={handleRestoreNativeDatabase}
+                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition"
+              >
+                <Database className="w-3.5 h-3.5 text-emerald-400" />
+                <span>{dashboardText('nativeDatabaseRestore')}</span>
+              </button>
+            )}
+
+            <button
+              onClick={handleDevTestSQLite}
+              className="px-3 py-2 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/40 text-amber-300 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition"
+              title="Dev-only: Test SQLite template_save et template_get"
+            >
+              <Database className="w-3.5 h-3.5" />
+              <span>Dev: Test SQLite</span>
+            </button>
+          </div>
+        </div>
+
+        {importError && (
+          <div className="mx-8 mt-3 rounded-xl border border-amber-500/40 bg-amber-950/30 px-4 py-2 text-xs text-amber-200" role="status">
+            {importError}
+          </div>
+        )}
+
+        {dbOpMessage && (
+          <div className="mt-4 bg-slate-900 border border-blue-500/50 text-blue-200 text-xs px-4 py-2.5 rounded-xl flex items-center justify-between shadow-md">
+            <span>{dbOpMessage}</span>
+            <button
+              onClick={() => setDbOpMessage(null)}
+              className="text-slate-400 hover:text-white font-bold ml-4"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {devTestResult && (
+          <div className="mt-4 bg-slate-900 border border-amber-500/50 text-amber-200 text-xs px-4 py-2.5 rounded-xl flex items-center justify-between shadow-md">
+            <span>{devTestResult}</span>
+            <button
+              onClick={() => setDevTestResult(null)}
+              className="text-slate-400 hover:text-white font-bold ml-4"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Main Content Area */}
+      <div className="max-w-7xl mx-auto w-full p-8 flex-1 flex flex-col space-y-6">
+        {/* Search & Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <h2 className="text-base font-bold text-white">
+              {t('savedTemplates')}
+            </h2>
+            <span className="bg-slate-800 text-slate-300 font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border border-slate-700">
+              {filteredTemplates.length}
+            </span>
+          </div>
+
+          {templates.length > 0 && (
+            <div className="relative w-full sm:w-72">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder={t('searchTemplates')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-4 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Empty State or Templates Grid */}
+        {templates.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-12 bg-slate-900/60 border border-dashed border-slate-800 rounded-2xl text-center">
+            <div className="w-16 h-16 rounded-2xl bg-blue-950/40 border border-blue-800/40 flex items-center justify-center text-blue-400 mb-4">
+              <Tag className="w-8 h-8" />
+            </div>
+            <h3 className="text-base font-bold text-white mb-1">{t('noTemplates')}</h3>
+            <p className="text-xs text-slate-400 max-w-md mb-6">
+              L'espace de travail est prêt. Créez votre premier gabarit d'étiquette sur-mesure (prix, promo, code-barres) ou importez un modèle existant.
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={onOpenNewWizard}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{t('createTemplate')}</span>
+              </button>
+              <label className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer transition">
+                <Upload className="w-4 h-4" />
+                <span>{t('importTemplates')}</span>
+                <input type="file" accept=".json,.zpl,.txt,application/json,text/plain" onChange={handleImportFile} className="hidden" />
+              </label>
+            </div>
+          </div>
+        ) : filteredTemplates.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-12 bg-slate-900 border border-dashed border-slate-800 rounded-2xl text-center">
+            <Search className="w-8 h-8 text-slate-600 mb-2" />
+            <p className="text-xs text-slate-400">Aucun gabarit ne correspond à votre recherche "{searchTerm}".</p>
+            <button
+              onClick={() => setSearchTerm('')}
+              className="mt-3 text-xs text-blue-400 hover:text-blue-300 font-semibold"
+            >
+              Effacer le filtre
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredTemplates.map((template) => (
+              <div
+                key={template.id}
+                className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 shadow-sm transition-all flex flex-col justify-between group"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <h3 className="font-bold text-sm text-white group-hover:text-blue-400 transition-colors truncate">
+                      {template.name}
+                    </h3>
+                  </div>
+
+                  {/* Dimensions & Computed Status */}
+                  <div className="flex items-center justify-between mb-4 text-[11px] font-mono text-slate-400">
+                    <span className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800">
+                      {template.width_mm} × {template.height_mm} mm
+                    </span>
+                    <div className="flex items-center gap-1.5 font-sans">
+                      {(() => {
+                        const status = PreFlightEngine.computeTemplateStatus(template);
+                        if (status === 'ready') {
+                          return <span className="text-emerald-400 font-semibold text-[11px]">● {t('ready')}</span>;
+                        }
+                        if (status === 'warning') {
+                          return <span className="text-amber-400 font-semibold text-[11px]">● {t('review')}</span>;
+                        }
+                        return <span className="text-slate-500 font-semibold text-[11px]">● {t('draft')}</span>;
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Mini Preview Box */}
+                  <div className="h-32 bg-slate-950 border border-slate-800/80 rounded-xl p-2 flex items-center justify-center overflow-hidden mb-4 relative">
+                    <div className="scale-75 origin-center pointer-events-none">
+                      <LabelRenderer template={template} scale={0.7} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Actions */}
+                <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => onDuplicateTemplate(template)}
+                      className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
+                      title={t('duplicateTemplate')}
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleExportTemplate(template)}
+                      className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
+                      title={t('exportJson')}
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(`Supprimer le gabarit "${template.name}" ?`)) {
+                          onDeleteTemplate(template.id);
+                        }
+                      }}
+                      className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 rounded-lg transition"
+                      title={t('deleteTemplate')}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => onSelectTemplateToEdit(template)}
+                      className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg flex items-center gap-1 transition"
+                    >
+                      <Edit3 className="w-3 h-3" />
+                      <span>{t('edit')}</span>
+                    </button>
+                    <button
+                      onClick={() => onSelectTemplateToGenerate(template)}
+                      className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg flex items-center gap-1 shadow-sm transition"
+                    >
+                      <Printer className="w-3 h-3" />
+                      <span>{t('printSheet')}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <PrintJobHistoryModal
+        isOpen={showJobHistory}
+        onClose={() => setShowJobHistory(false)}
+      />
+      <ZplSourceWorkbench isOpen={showZplWorkbench} onClose={() => setShowZplWorkbench(false)} />
+    </div>
+  );
+};

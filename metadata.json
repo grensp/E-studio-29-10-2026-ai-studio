@@ -1,0 +1,8 @@
+{
+  "name": "E-Studio",
+  "description": "Design, preview, and generate printable price labels, shelf tags, and barcode gabarits with tier pricing and batch imposition.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

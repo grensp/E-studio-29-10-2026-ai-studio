@@ -1,0 +1,30 @@
+export const designTokens = {
+  color: {
+    brand: '#2563eb',
+    brandStrong: '#1d4ed8',
+    success: '#16a34a',
+    warning: '#f59e0b',
+    danger: '#dc2626',
+    neutral: '#475569',
+    background: '#f8fafc',
+    surface: '#ffffff',
+    border: '#e2e8f0',
+    text: '#0f172a',
+    muted: '#475569',
+  },
+  spacing: {
+    xs: '4px',
+    sm: '8px',
+    md: '12px',
+    lg: '16px',
+    xl: '20px',
+    xxl: '24px',
+    xxxl: '32px',
+  },
+  radius: {
+    sm: '8px',
+    md: '12px',
+    lg: '16px',
+    xl: '20px',
+  },
+};
